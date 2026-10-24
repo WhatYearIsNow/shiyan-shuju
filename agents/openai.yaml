@@ -1,0 +1,6 @@
+interface:
+  display_name: "实验数据处理"
+  short_description: "核对物理实验读数、计算依据与不确定度，生成可复算记录及按需报告"
+  default_prompt: "使用 $shiyan-shuju 处理我的物理实验数据，核对口径并保留复算记录。"
+policy:
+  allow_implicit_invocation: true

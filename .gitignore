@@ -1,0 +1,30 @@
+# Private course material and per-user settings never belong in this repository.
+.local/
+.env
+.env.*
+!.env.example
+build/
+dist/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+node_modules/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+# LaTeX intermediates and generated experiment reports.
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.pdf
