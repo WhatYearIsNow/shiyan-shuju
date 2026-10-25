@@ -18,6 +18,7 @@ from urllib.parse import unquote, urlsplit
 ROOT_FILES = frozenset({
     "SKILL.md", "README.md", "LICENSE", "NOTICE.md", "CONTRIBUTING.md",
     "CHANGELOG.md", ".gitignore", ".gitattributes", "pyproject.toml",
+    ".editorconfig", "ruff.toml", "requirements-dev.txt", "maintenance.json", "MAINTENANCE.md",
 })
 PUBLIC_DIRECTORIES = {
     ".github": frozenset({".yml", ".yaml", ".md"}),

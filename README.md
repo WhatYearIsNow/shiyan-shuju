@@ -59,3 +59,5 @@ python -B scripts/build_release.py --output build/shiyan-shuju.zip
 本项目按 [MIT](LICENSE) 提供代码与自写文档，材料边界见 [NOTICE](NOTICE.md)。不分发教材、学生报告、扫描纸、校徽或私人实验档案。
 
 数值处理的边界参考 [NIST 不确定度传播](https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-law-propagation-uncertainty)、[NIST 扩展不确定度](https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-6-expanded-uncertainty)、[Python Decimal](https://docs.python.org/3/library/decimal.html)；技能结构参考 [Agent Skills 规范](https://agentskills.io/specification)。课程的特殊算法须由本次材料确认，不因这些链接自动获得适用性。
+
+开发、测试、候选构建和回退约定见[维护流程](MAINTENANCE.md)。
