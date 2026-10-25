@@ -1,4 +1,5 @@
 """Analytic oracles, transformation invariants, and numerical failure cases."""
+
 from pathlib import Path
 import sys
 import unittest
@@ -20,24 +21,25 @@ class PropagationTests(unittest.TestCase):
         self.assertEqual(result["u"], Decimal(".4"))
 
     def test_power_variable_sets_cannot_silently_drop_input(self):
-        for powers, relative in (({"x": 1}, {}),
-                                 ({"x": 1}, {"x": ".1", "z": ".2"})):
+        for powers, relative in (({"x": 1}, {}), ({"x": 1}, {"x": ".1", "z": ".2"})):
             with self.subTest(powers=powers, relative=relative), self.assertRaises(ValueError):
                 u.propagate_power(powers, relative, 2)
         self.assertEqual(u.propagate_power({}, {}, 2)["u"], 0)
 
     def test_exact_linear_numeric_derivative(self):
-        result = u.propagate_numeric(lambda x, y: x + 2 * y,
-                                    {"x": (1, ".3"), "y": (2, ".2")})
+        result = u.propagate_numeric(lambda x, y: x + 2 * y, {"x": (1, ".3"), "y": (2, ".2")})
         self.assertEqual(result["value"], 5)
         self.assertEqual(result["u"], Decimal(".5"))
         self.assertEqual([item["partial"] for item in result["detail"]], [1, 2])
 
     def test_product_numeric_derivative_against_analytic_result(self):
-        result = u.propagate_numeric(lambda x, y: x * y,
-                                    {"x": (2, ".1"), "y": (3, ".2")})
+        result = u.propagate_numeric(lambda x, y: x * y, {"x": (2, ".1"), "y": (3, ".2")})
         self.assertEqual((result["value"], result["u"]), (6, Decimal(".5")))
-        analytic = u.propagate_power({"x": 1, "y": 1}, {"x": ".05", "y": "0.0666666666666666666666666666666666666666666666666666666666667"}, 6)
+        analytic = u.propagate_power(
+            {"x": 1, "y": 1},
+            {"x": ".05", "y": "0.0666666666666666666666666666666666666666666666666666666666667"},
+            6,
+        )
         with localcontext() as context:
             context.prec = 60
             self.assertLess(abs(result["u"] - analytic["u"]), Decimal("1e-57"))
@@ -86,7 +88,11 @@ class FittingTests(unittest.TestCase):
             context.prec = 60
             # q=-a/b: (49/200 + 7/100 + 21/100)/(81/100) = 35/54.
             a, b = result["a"], result["b"]
-            variance = (result["u_a"] / b) ** 2 + (a * result["u_b"] / b ** 2) ** 2 - 2 * a * result["cov_ab"] / b ** 3
+            variance = (
+                (result["u_a"] / b) ** 2
+                + (a * result["u_b"] / b**2) ** 2
+                - 2 * a * result["cov_ab"] / b**3
+            )
             self.assertLess(abs(variance - Decimal(35) / 54), Decimal("1e-57"))
 
     def test_covariance_transforms_under_coordinate_changes(self):
@@ -99,10 +105,12 @@ class FittingTests(unittest.TestCase):
 
     def test_noisy_fit_against_exact_rational_oracle(self):
         result = u.linear_fit([0, 1, 2, 3], [1, 2, 2, 4])
-        self.assertEqual((result["a"], result["b"], result["sse"]),
-                         (Decimal(".9"), Decimal(".9"), Decimal(".7")))
-        self.assertEqual(result["residuals"],
-                         [Decimal(".1"), Decimal(".2"), Decimal("-.7"), Decimal(".4")])
+        self.assertEqual(
+            (result["a"], result["b"], result["sse"]), (Decimal(".9"), Decimal(".9"), Decimal(".7"))
+        )
+        self.assertEqual(
+            result["residuals"], [Decimal(".1"), Decimal(".2"), Decimal("-.7"), Decimal(".4")]
+        )
         with localcontext() as context:
             context.prec = 60
             self.assertLess(abs(result["u_b"] ** 2 - Decimal(".07")), Decimal("1e-57"))
@@ -118,15 +126,14 @@ class FittingTests(unittest.TestCase):
     def test_translation_and_rescaling_transform_parameters(self):
         base = u.linear_fit([0, 1, 2, 3], [1, 2, 2, 4])
         shifted = u.linear_fit([10, 11, 12, 13], [8, 9, 9, 11])
-        self.assertEqual((shifted["a"], shifted["b"], shifted["sse"]),
-                         (Decimal("-1.1"), base["b"], base["sse"]))
+        self.assertEqual(
+            (shifted["a"], shifted["b"], shifted["sse"]), (Decimal("-1.1"), base["b"], base["sse"])
+        )
         scaled = u.linear_fit([0, 2, 4, 6], [-3, -6, -6, -12])
-        self.assertEqual((scaled["a"], scaled["b"]),
-                         (Decimal("-2.7"), Decimal("-1.35")))
+        self.assertEqual((scaled["a"], scaled["b"]), (Decimal("-2.7"), Decimal("-1.35")))
         with localcontext() as context:
             context.prec = 60
-            self.assertLess(abs(scaled["u_b"] - base["u_b"] * Decimal("1.5")),
-                            Decimal("1e-57"))
+            self.assertLess(abs(scaled["u_b"] - base["u_b"] * Decimal("1.5")), Decimal("1e-57"))
             self.assertEqual(scaled["sse"], base["sse"] * 9)
 
     def test_exact_constant_and_negative_lines(self):
@@ -137,13 +144,18 @@ class FittingTests(unittest.TestCase):
         self.assertEqual((descending["a"], descending["b"], descending["gamma"]), (5, -2, -1))
 
     def test_invalid_lengths_degeneracy_and_nonfinite(self):
-        for xs, ys in (([], []), ([0, 1], [0, 1]), ([0, 1, 2], [0, 1]),
-                       ([1, 1, 1], [1, 2, 3]), ([0, 1, 2], [0, 1, "NaN"])):
+        for xs, ys in (
+            ([], []),
+            ([0, 1], [0, 1]),
+            ([0, 1, 2], [0, 1]),
+            ([1, 1, 1], [1, 2, 3]),
+            ([0, 1, 2], [0, 1, "NaN"]),
+        ):
             with self.subTest(xs=xs, ys=ys), self.assertRaises(ValueError):
                 u.linear_fit(xs, ys)
 
     def test_large_offset_with_exact_recorded_inputs(self):
-        result = u.linear_fit([str(10 ** 40 + i) for i in range(4)], [1, 3, 5, 7])
+        result = u.linear_fit([str(10**40 + i) for i in range(4)], [1, 3, 5, 7])
         self.assertEqual(result["b"], 2)
         self.assertEqual(result["sse"], 0)
 
@@ -151,8 +163,7 @@ class FittingTests(unittest.TestCase):
 class DifferenceTests(unittest.TestCase):
     def test_noisy_odd_data_is_not_silently_truncated_or_mutated(self):
         # SYNTHETIC: unequal perturbations make two silent truncations disagree.
-        values = ['10.00', '14.46', '18.88', '23.39', '27.77',
-                  '32.30', '36.65', '41.19', '45.55']
+        values = ['10.00', '14.46', '18.88', '23.39', '27.77', '32.30', '36.65', '41.19', '45.55']
         saved = values.copy()
         with self.assertRaises(ValueError):
             u.successive_difference(values)
@@ -175,8 +186,13 @@ class DifferenceTests(unittest.TestCase):
         self.assertEqual(u.successive_difference([6, 4, 2, 0], "-.5")["slope"], 4)
 
     def test_invalid_count_and_step(self):
-        for values, step in (([], None), ([1], None), ([1, 2, 3], None),
-                             ([1, 2], 0), ([1, 2], "NaN")):
+        for values, step in (
+            ([], None),
+            ([1], None),
+            ([1, 2, 3], None),
+            ([1, 2], 0),
+            ([1, 2], "NaN"),
+        ):
             with self.subTest(values=values, step=step), self.assertRaises(ValueError):
                 u.successive_difference(values, step)
 

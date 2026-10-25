@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Backward-compatible API facade and command-line entry point."""
+
 import sys
 from decimal import DecimalException
 from labmath import *  # Compatibility with existing experiment drivers.

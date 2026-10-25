@@ -31,7 +31,9 @@ def build_release(root: Path, output: Path) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(prefix=".release-", suffix=".zip", dir=output.parent, delete=False) as handle:
+        with tempfile.NamedTemporaryFile(
+            prefix=".release-", suffix=".zip", dir=output.parent, delete=False
+        ) as handle:
             temporary = Path(handle.name)
         # STORE avoids compression-library/version differences across platforms.
         with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_STORED) as archive:
@@ -40,7 +42,7 @@ def build_release(root: Path, output: Path) -> Path:
                 name = f"{ARCHIVE_PREFIX}/{path.relative_to(root).as_posix()}"
                 info = zipfile.ZipInfo(name, date_time=ZIP_TIMESTAMP)
                 info.create_system = 3
-                info.external_attr = (0o100644 << 16)
+                info.external_attr = 0o100644 << 16
                 info.compress_type = zipfile.ZIP_STORED
                 archive.writestr(info, path.read_bytes())
         os.replace(temporary, output)

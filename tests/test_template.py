@@ -23,8 +23,10 @@ class TemplateTests(unittest.TestCase):
                     QA.check(output, render=True)
             self.assertFalse(output.exists())
 
-    @unittest.skipUnless(os.environ.get('SHIYAN_TEMPLATE_INTEGRATION') == '1',
-                         'Set SHIYAN_TEMPLATE_INTEGRATION=1 with XeLaTeX and pdftoppm installed')
+    @unittest.skipUnless(
+        os.environ.get('SHIYAN_TEMPLATE_INTEGRATION') == '1',
+        'Set SHIYAN_TEMPLATE_INTEGRATION=1 with XeLaTeX and pdftoppm installed',
+    )
     def test_compile_and_render_all_fixtures(self):
         scratch = ROOT / 'build/template-tests'
         scratch.mkdir(parents=True, exist_ok=True)

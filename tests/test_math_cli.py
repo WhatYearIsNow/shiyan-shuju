@@ -1,4 +1,5 @@
 """Real CLI success/error contracts plus direct-call parser validation."""
+
 import contextlib
 import io
 from pathlib import Path
@@ -13,16 +14,22 @@ import uncertainty as u
 
 class CliTests(unittest.TestCase):
     def run_cli(self, *arguments):
-        return subprocess.run([sys.executable, "-B", str(SCRIPTS / "uncertainty.py"),
-                               *arguments], capture_output=True, text=True,
-                              encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "uncertainty.py"), *arguments],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
 
     def test_all_commands_have_successful_direct_and_process_paths(self):
         examples = (
             (("direct", "--values", "1,3", "--delta-inst", "3", "--C", "3"), "n=2"),
             (("bridge", "--R1", "100", "--R2", "100", "--R0", "500", "--dR0", ".1"), "Rx=500"),
             (("boxerr", "--reading", "508.5", "--m", "6"), "0.59500"),
-            (("prop", "--value", "-12", "--powers", "x=2,y=-1", "--rel", "x=.03,y=.08"), "1.200000"),
+            (
+                ("prop", "--value", "-12", "--powers", "x=2,y=-1", "--rel", "x=.03,y=.08"),
+                "1.200000",
+            ),
             (("fit", "--x", "0,1,2,3", "--y", "1,2,2,4"), "b=0.900000"),
             (("diff", "--values", "0,2,4,6", "--step", ".5"), "4.000000"),
             (("round", "--value", "123.456", "--u", "9.9", "--sig", "1"), "120 ± 10"),
@@ -53,16 +60,14 @@ class CliTests(unittest.TestCase):
     def test_extra_and_missing_uncertainty_are_errors(self):
         for relative in ("y=.1", "x=.1,y=.2"):
             with self.subTest(relative=relative):
-                result = self.run_cli("prop", "--value", "2", "--powers", "x=1",
-                                      "--rel", relative)
+                result = self.run_cli("prop", "--value", "2", "--powers", "x=1", "--rel", relative)
                 self.assertEqual(result.returncode, 2)
                 self.assertNotIn("Traceback", result.stderr)
 
     def test_malformed_assignments_are_diagnostic(self):
         for text in ("", "x", "=1", "x=", "x=1,", "x=1=2", "x=NaN"):
             with self.subTest(text=text):
-                result = self.run_cli("prop", "--value", "2", "--powers", text,
-                                      "--rel", "x=.1")
+                result = self.run_cli("prop", "--value", "2", "--powers", text, "--rel", "x=.1")
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("输入或计算错误", result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
@@ -70,8 +75,7 @@ class CliTests(unittest.TestCase):
     def test_assignment_whitespace_is_accepted(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            result = u.main(["prop", "--value", "2", "--powers", " x = 2 ",
-                             "--rel", " x = .1 "])
+            result = u.main(["prop", "--value", "2", "--powers", " x = 2 ", "--rel", " x = .1 "])
         self.assertEqual(result, 0)
         self.assertIn("0.400000", output.getvalue())
 

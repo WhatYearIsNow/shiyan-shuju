@@ -4,7 +4,6 @@ The two direct-result algorithms preserve historical classroom formulas. A
 requested t-table probability does not guarantee coverage of the final interval.
 """
 
-
 from __future__ import annotations
 
 
@@ -13,14 +12,28 @@ from .numbers import D, _nonnegative, _positive, align_result, round_sig, fmt, c
 
 
 T95 = {
-    1: Decimal("12.706"), 2: Decimal("4.303"), 3: Decimal("3.182"),
-    4: Decimal("2.776"), 5: Decimal("2.571"), 6: Decimal("2.447"),
-    7: Decimal("2.365"), 8: Decimal("2.306"), 9: Decimal("2.262"),
-    10: Decimal("2.228"), 11: Decimal("2.201"), 12: Decimal("2.179"),
-    13: Decimal("2.160"), 14: Decimal("2.145"), 15: Decimal("2.131"),
-    16: Decimal("2.120"), 17: Decimal("2.110"), 18: Decimal("2.101"),
-    19: Decimal("2.093"), 20: Decimal("2.086"),
+    1: Decimal("12.706"),
+    2: Decimal("4.303"),
+    3: Decimal("3.182"),
+    4: Decimal("2.776"),
+    5: Decimal("2.571"),
+    6: Decimal("2.447"),
+    7: Decimal("2.365"),
+    8: Decimal("2.306"),
+    9: Decimal("2.262"),
+    10: Decimal("2.228"),
+    11: Decimal("2.201"),
+    12: Decimal("2.179"),
+    13: Decimal("2.160"),
+    14: Decimal("2.145"),
+    15: Decimal("2.131"),
+    16: Decimal("2.120"),
+    17: Decimal("2.110"),
+    18: Decimal("2.101"),
+    19: Decimal("2.093"),
+    20: Decimal("2.086"),
 }
+
 
 @calculation
 def mean(xs):
@@ -28,6 +41,7 @@ def mean(xs):
     if not xs:
         raise ValueError("测量列不能为空")
     return sum(xs) / len(xs)
+
 
 @calculation
 def std_dev(xs):
@@ -39,25 +53,30 @@ def std_dev(xs):
     m = mean(xs)
     return (sum((x - m) ** 2 for x in xs) / (n - 1)).sqrt()
 
+
 @calculation
 def std_dev_mean(xs):
     """平均值的标准偏差 Sx̄ = Sx/√n，即 uA（简单算法）。"""
     xs = [D(x) for x in xs]
     return std_dev(xs) / D(len(xs)).sqrt()
 
+
 @calculation
 def type_b(delta, C):
     """B 类不确定度 uB = Δ/C。C 由分布定（正态3、均匀√3 等）。"""
     return _nonnegative(delta, "误差限 Δ") / _positive(C, "分布因数 C")
+
 
 @calculation
 def combine(*us):
     """无相关输入的合成标准不确定度 uc = √Σuᵢ²；空和为 0。"""
     return sum((_nonnegative(u) ** 2 for u in us), Decimal(0)).sqrt()
 
+
 @calculation
-def direct_result(values, delta_inst=None, delta_est=None, C=None,
-                  algo: int = 1, t_value=None, conf: str = "0.95"):
+def direct_result(
+    values, delta_inst=None, delta_est=None, C=None, algo: int = 1, t_value=None, conf: str = "0.95"
+):
     """
     直接测量全链路。
 

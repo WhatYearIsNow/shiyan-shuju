@@ -1,4 +1,5 @@
 """Independent statistics, uncertainty recipes, and scoped instrument checks."""
+
 from pathlib import Path
 import sys
 import unittest
@@ -26,8 +27,9 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(u.std_dev(values), u.std_dev([x + 100 for x in values]))
         with localcontext() as context:
             context.prec = 60
-            self.assertLess(abs(u.std_dev([-2 * x for x in values])
-                                - 2 * u.std_dev(values)), Decimal("1e-57"))
+            self.assertLess(
+                abs(u.std_dev([-2 * x for x in values]) - 2 * u.std_dev(values)), Decimal("1e-57")
+            )
 
     def test_iterables_consumed_once(self):
         self.assertEqual(u.mean(str(x) for x in (1, 2, 3)), 2)
@@ -90,11 +92,19 @@ class MeasurementTests(unittest.TestCase):
 
     def test_invalid_parameters_and_missing_information(self):
         for arguments in (
-            {"algo": True}, {"algo": 1.0}, {"algo": "1"}, {"algo": 0},
-            {"delta_inst": 1}, {"delta_inst": -1, "C": 3},
-            {"delta_est": -1, "C": 3}, {"delta_inst": 1, "C": 0},
-            {"conf": 0}, {"conf": 1}, {"conf": "NaN"},
-            {"algo": 2, "conf": ".99"}, {"algo": 2, "t_value": 0},
+            {"algo": True},
+            {"algo": 1.0},
+            {"algo": "1"},
+            {"algo": 0},
+            {"delta_inst": 1},
+            {"delta_inst": -1, "C": 3},
+            {"delta_est": -1, "C": 3},
+            {"delta_inst": 1, "C": 0},
+            {"conf": 0},
+            {"conf": 1},
+            {"conf": "NaN"},
+            {"algo": 2, "conf": ".99"},
+            {"algo": 2, "t_value": 0},
         ):
             with self.subTest(arguments=arguments), self.assertRaises(ValueError):
                 u.direct_result([1, 2], **arguments)
@@ -122,8 +132,7 @@ class InstrumentPresetTests(unittest.TestCase):
         grades = {"10": ".2", "1": ".5"}
         total, _ = u.resistance_box_error("12", 2, grades=grades)
         self.assertEqual(total, Decimal(".04"))
-        for invalid in ({}, {"10": ".2", ".1": "5"}, {".5": "1"},
-                        {"1": "-1"}, {"0": "1"}):
+        for invalid in ({}, {"10": ".2", ".1": "5"}, {".5": "1"}, {"1": "-1"}, {"0": "1"}):
             with self.subTest(grades=invalid), self.assertRaises(ValueError):
                 u.resistance_box_error("1", 2, grades=invalid)
 
@@ -139,8 +148,10 @@ class InstrumentPresetTests(unittest.TestCase):
 
     def test_bridge_has_independent_sensitivity_and_rss_checks(self):
         result = u.bridge_row(100, 100, 500, ".1", delta_d=2)
-        self.assertEqual((result["C"], result["Rx"], result["S"], result["delta_s"]),
-                         (1, 500, 10000, Decimal(".01")))
+        self.assertEqual(
+            (result["C"], result["Rx"], result["S"], result["delta_s"]),
+            (1, 500, 10000, Decimal(".01")),
+        )
         self.assertEqual(result["method"], "course_bridge_rss")
         self.assertIsNone(result["coverage_probability"])
         with localcontext() as context:

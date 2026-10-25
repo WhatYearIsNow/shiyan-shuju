@@ -25,11 +25,16 @@ class ReleaseTests(unittest.TestCase):
         fixture_parent = Path(__file__).resolve().parents[1] / "build"
         fixture_parent.mkdir(exist_ok=True)
         self.temporary = tempfile.TemporaryDirectory(prefix="release-tests-", dir=fixture_parent)
-        self.assertTrue(Path(self.temporary.name).resolve().is_relative_to(fixture_parent.resolve()))
+        self.assertTrue(
+            Path(self.temporary.name).resolve().is_relative_to(fixture_parent.resolve())
+        )
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name) / "fixture"
         self.root.mkdir()
-        self.write("SKILL.md", "---\nname: demo-skill\ndescription: Constructed test skill\n---\n\n# Demo\n")
+        self.write(
+            "SKILL.md",
+            "---\nname: demo-skill\ndescription: Constructed test skill\n---\n\n# Demo\n",
+        )
         self.write("README.md", "# Demo\n\n[Skill](SKILL.md)\n")
         self.write("LICENSE", "MIT License\n\nConstructed fixture.\n")
         self.write("NOTICE.md", "# Fixture\n\nAll data is constructed.\n")
@@ -61,7 +66,10 @@ class ReleaseTests(unittest.TestCase):
                 self.assertTrue(checker.check_release(self.root))
 
     def test_multiline_description_passes(self):
-        self.write("SKILL.md", "---\nname: demo-skill\ndescription: >\n  Synthetic multiline\n  description.\n---\n")
+        self.write(
+            "SKILL.md",
+            "---\nname: demo-skill\ndescription: >\n  Synthetic multiline\n  description.\n---\n",
+        )
         self.assertEqual(checker.check_release(self.root), [])
 
     def test_inline_reference_encoded_and_image_links_pass(self):
@@ -69,20 +77,28 @@ class ReleaseTests(unittest.TestCase):
         self.write("docs/a(b).md", "# Parenthesis\n")
         # A PNG placeholder is sufficient: link validation does not decode images.
         (self.root / "docs" / "diagram.png").write_bytes(b"synthetic pixel fixture")
-        self.write("README.md", "[A](<docs/有 空格.md>)\n[B](docs/有%20空格.md#target)\n"
-                   "[C](docs/a(b).md)\n![Image](docs/diagram.png)\n[D][ref]\n"
-                   "[ref]: docs/有%20空格.md \"Title\"\n[anchor](#demo)\n"
-                   "[external](https://example.invalid/readme)\n")
+        self.write(
+            "README.md",
+            "[A](<docs/有 空格.md>)\n[B](docs/有%20空格.md#target)\n"
+            "[C](docs/a(b).md)\n![Image](docs/diagram.png)\n[D][ref]\n"
+            "[ref]: docs/有%20空格.md \"Title\"\n[anchor](#demo)\n"
+            "[external](https://example.invalid/readme)\n",
+        )
         self.assertEqual(checker.check_release(self.root), [])
 
     def test_fenced_and_inline_code_links_are_not_real_links(self):
-        self.write("README.md", "# Demo\n\n```markdown\n[x](missing.md)\n```\n"
-                   "`[inline](missing.md)`\n\n    [indented](missing.md)\n")
+        self.write(
+            "README.md",
+            "# Demo\n\n```markdown\n[x](missing.md)\n```\n"
+            "`[inline](missing.md)`\n\n    [indented](missing.md)\n",
+        )
         self.assertEqual(checker.check_release(self.root), [])
 
     def test_broken_relative_link_fails(self):
         self.write("README.md", "[broken](missing.md)\n")
-        self.assertTrue(any("broken relative link" in issue for issue in checker.check_release(self.root)))
+        self.assertTrue(
+            any("broken relative link" in issue for issue in checker.check_release(self.root))
+        )
 
     def test_link_cannot_escape_or_target_unreleased_material(self):
         self.write(".local/private.md", "synthetic private material\n")
@@ -125,7 +141,9 @@ class ReleaseTests(unittest.TestCase):
         self.write("scripts/math.py", f'value = "{synthetic_number}"\n')
         self.assertEqual(checker.check_release(self.root), [])
         self.write("scripts/math.py", 'student_id = "' + synthetic_number + '"\n')
-        self.assertTrue(any("labelled student ID" in issue for issue in checker.check_release(self.root)))
+        self.assertTrue(
+            any("labelled student ID" in issue for issue in checker.check_release(self.root))
+        )
 
     def test_local_denylist_catches_known_private_value_without_packaging_it(self):
         private_value = "42" * 5
@@ -134,13 +152,22 @@ class ReleaseTests(unittest.TestCase):
         issues = checker.check_release(self.root)
         self.assertTrue(any("private denylist" in issue for issue in issues))
         self.assertTrue(all(private_value not in issue for issue in issues))
-        self.assertFalse(any(".local" in path.parts for path in checker.collect_release_files(self.root)))
+        self.assertFalse(
+            any(".local" in path.parts for path in checker.collect_release_files(self.root))
+        )
 
     def test_private_build_cache_and_unknown_roots_never_enter_archive(self):
         self.write("scripts/public.py", "print('synthetic')\n")
-        for relative in (".local/private.md", ".git/config", "build/old.zip",
-                         "scripts/__pycache__/old.pyc", "scripts/.local/private.py",
-                         "scripts/venv/secret.py", "unlisted/private.md", "secrets.txt"):
+        for relative in (
+            ".local/private.md",
+            ".git/config",
+            "build/old.zip",
+            "scripts/__pycache__/old.pyc",
+            "scripts/.local/private.py",
+            "scripts/venv/secret.py",
+            "unlisted/private.md",
+            "secrets.txt",
+        ):
             self.write(relative, "synthetic excluded file\n")
         output = builder.build_release(self.root, self.root / "build" / "release.zip")
         with zipfile.ZipFile(output) as archive:
@@ -189,11 +216,15 @@ class ReleaseTests(unittest.TestCase):
             link.symlink_to(target)
         except (OSError, NotImplementedError):
             self.skipTest("symbolic links require permission on this platform")
-        self.assertTrue(any("symbolic links" in issue for issue in checker.check_release(self.root)))
+        self.assertTrue(
+            any("symbolic links" in issue for issue in checker.check_release(self.root))
+        )
         link.unlink()
         directory_link = self.root / "references"
         directory_link.symlink_to(target.parent, target_is_directory=True)
-        self.assertTrue(any("symbolic links" in issue for issue in checker.check_release(self.root)))
+        self.assertTrue(
+            any("symbolic links" in issue for issue in checker.check_release(self.root))
+        )
 
     def test_reparse_flag_and_link_rejection_without_os_privilege(self):
         flags = SimpleNamespace(st_mode=0o100644, st_file_attributes=0x400)
@@ -201,8 +232,12 @@ class ReleaseTests(unittest.TestCase):
             self.assertTrue(checker._is_link(Path("synthetic")))
         target = self.write("scripts/linked.py", "# Synthetic\n")
         real_is_link = checker._is_link
-        with mock.patch.object(checker, "_is_link", side_effect=lambda path: path == target or real_is_link(path)):
-            self.assertTrue(any("symbolic links" in issue for issue in checker.check_release(self.root)))
+        with mock.patch.object(
+            checker, "_is_link", side_effect=lambda path: path == target or real_is_link(path)
+        ):
+            self.assertTrue(
+                any("symbolic links" in issue for issue in checker.check_release(self.root))
+            )
             with self.assertRaises(ValueError):
                 builder.build_release(self.root, self.root / "build" / "linked.zip")
 
@@ -212,7 +247,12 @@ class ReleaseTests(unittest.TestCase):
         self.write("README.md", "[missing](no-file.md)\n")
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(checker.main(["--root", str(self.root)]), 1)
-            self.assertEqual(builder.main(["--root", str(self.root), "--output", str(self.root / "build" / "bad.zip")]), 1)
+            self.assertEqual(
+                builder.main(
+                    ["--root", str(self.root), "--output", str(self.root / "build" / "bad.zip")]
+                ),
+                1,
+            )
 
 
 if __name__ == "__main__":

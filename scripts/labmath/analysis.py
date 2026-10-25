@@ -1,11 +1,19 @@
 """First-order independent propagation, unweighted fitting, and arithmetic."""
 
-
 from __future__ import annotations
 
 
 from decimal import Decimal
-from .numbers import D, _nonnegative, _positive, fmt, sig_figs, round_half_even, round_sig, calculation
+from .numbers import (
+    D,
+    _nonnegative,
+    _positive,
+    fmt,
+    sig_figs,
+    round_half_even,
+    round_sig,
+    calculation,
+)
 from .measurement import mean
 
 
@@ -34,14 +42,14 @@ def propagate_power(powers: dict, rel_unc: dict, value):
         r = _nonnegative(rel_unc[k], f"{k} 的相对不确定度")
         term = (D(p) * r) ** 2
         var += term
-        detail.append({"var": k, "power": fmt(p),
-                       "rel_u": r, "term": term})
+        detail.append({"var": k, "power": fmt(p), "rel_u": r, "term": term})
     rel = var.sqrt()
     return {
         "rel_u": rel,
         "u": abs(D(value)) * rel,
         "detail": detail,
     }
+
 
 @calculation
 def propagate_numeric(f, variables: dict, rel_step=Decimal("1e-7")):
@@ -56,16 +64,22 @@ def propagate_numeric(f, variables: dict, rel_step=Decimal("1e-7")):
     不确定度为零的确定量不扰动，partial=None、term=0。
     """
     rel_step = _positive(rel_step, "数值偏导步长系数")
-    variables = {k: (D(v), _nonnegative(u, f"{k} 的不确定度"))
-                 for k, (v, u) in variables.items()}
+    variables = {k: (D(v), _nonnegative(u, f"{k} 的不确定度")) for k, (v, u) in variables.items()}
     base = D(f(**{k: v[0] for k, v in variables.items()}))
     var = Decimal(0)
     detail = []
     for k, (v, u) in variables.items():
         v, u = D(v), D(u)
         if u == 0:
-            detail.append({"var": k, "partial": None, "u": u,
-                           "term": Decimal(0), "reason": "zero_uncertainty"})
+            detail.append(
+                {
+                    "var": k,
+                    "partial": None,
+                    "u": u,
+                    "term": Decimal(0),
+                    "reason": "zero_uncertainty",
+                }
+            )
             continue
         h = abs(v) * rel_step if v != 0 else rel_step
         hi = {kk: D(vv[0]) for kk, vv in variables.items()}
@@ -85,6 +99,7 @@ def propagate_numeric(f, variables: dict, rel_step=Decimal("1e-7")):
         var += term
         detail.append({"var": k, "partial": df, "u": u, "term": term})
     return {"value": base, "u": var.sqrt(), "detail": detail}
+
 
 @calculation
 def linear_fit(xs, ys):
@@ -129,11 +144,18 @@ def linear_fit(xs, ys):
     cov_ab = -xm * (sse / D(n - 2)) / sxx
 
     return {
-        "n": n, "a": a, "b": b, "gamma": r,
-        "sse": sse, "sigma_y": sigma_y,
-        "u_a": u_a, "u_b": u_b, "cov_ab": cov_ab,
+        "n": n,
+        "a": a,
+        "b": b,
+        "gamma": r,
+        "sse": sse,
+        "sigma_y": sigma_y,
+        "u_a": u_a,
+        "u_b": u_b,
+        "cov_ab": cov_ab,
         "residuals": residuals,
     }
+
 
 @calculation
 def successive_difference(vals, step=None):
@@ -153,8 +175,11 @@ def successive_difference(vals, step=None):
     total = sum(diffs)
     avg = total / (D(m) * D(m))
     out = {
-        "n": n, "m": m, "diffs": diffs,
-        "sum_diffs": total, "avg_step": avg,
+        "n": n,
+        "m": m,
+        "diffs": diffs,
+        "sum_diffs": total,
+        "avg_step": avg,
         "denominator": D(m) * D(m),
     }
     if step is not None:
@@ -163,6 +188,7 @@ def successive_difference(vals, step=None):
             raise ValueError("自变量间隔 step 不能为 0")
         out["slope"] = avg / step
     return out
+
 
 @calculation
 def add_sub(vals):
@@ -176,6 +202,7 @@ def add_sub(vals):
     nd = -max(v.as_tuple().exponent for v in vs)
     s = sum(vs)
     return round_half_even(s, nd), nd
+
 
 @calculation
 def mul_div(vals):

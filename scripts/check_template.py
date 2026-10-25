@@ -4,6 +4,7 @@
 Requires XeLaTeX; --render additionally requires pdftoppm. Artifacts stay in
 the requested output directory and are never included in a release archive.
 """
+
 from pathlib import Path
 import argparse
 import json
@@ -40,8 +41,13 @@ u_c^2&=\left(\frac{\partial f}{\partial x_1}u_1\right)^2
     sections = []
     for i in range(18):
         sections.append(r'\section{合成分组 ' + str(i + 1) + '}\n')
-        sections.append(('此段仅作分页测试。原始读数、单位、口径和计算结果应能追溯。'
-                         '内容区与框线保留间距，页眉重复，右下签字区不被正文覆盖。\n\n') * 3)
+        sections.append(
+            (
+                '此段仅作分页测试。原始读数、单位、口径和计算结果应能追溯。'
+                '内容区与框线保留间距，页眉重复，右下签字区不被正文覆盖。\n\n'
+            )
+            * 3
+        )
         sections.append(r'\begin{equation*}y=a+bx,\quad U=ku_c.\end{equation*}' + '\n')
     return {'short': short, 'wide': wide, 'multipage': ''.join(sections)}
 
@@ -59,17 +65,38 @@ def check(output, render=False):
     results = []
     for name, body in fixture_bodies().items():
         tex = output / (name + '.tex')
-        tex.write_text(template.replace('%%% BEGIN BODY %%%', '%%% BEGIN BODY %%%\n' + body), encoding='utf-8')
+        tex.write_text(
+            template.replace('%%% BEGIN BODY %%%', '%%% BEGIN BODY %%%\n' + body), encoding='utf-8'
+        )
         # Two passes resolve page references and report the final warnings.
         for _ in range(2):
-            completed = subprocess.run([engine, '-no-shell-escape', '-halt-on-error',
-                                        '-interaction=nonstopmode', '-output-directory', str(output), str(tex)],
-                                       capture_output=True, timeout=120)
+            completed = subprocess.run(
+                [
+                    engine,
+                    '-no-shell-escape',
+                    '-halt-on-error',
+                    '-interaction=nonstopmode',
+                    '-output-directory',
+                    str(output),
+                    str(tex),
+                ],
+                capture_output=True,
+                timeout=120,
+            )
             if completed.returncode:
                 raise ValueError(f'{name}: XeLaTeX failed; see its log')
         log = tex.with_suffix('.log').read_text(encoding='utf-8', errors='replace')
-        problems = [term for term in ('Overfull', 'Missing character:', 'LaTeX Error:',
-                                      'Undefined control sequence', 'headheight is too small') if term in log]
+        problems = [
+            term
+            for term in (
+                'Overfull',
+                'Missing character:',
+                'LaTeX Error:',
+                'Undefined control sequence',
+                'headheight is too small',
+            )
+            if term in log
+        ]
         if problems:
             raise ValueError(f'{name}: layout/compile warnings: {problems}')
         images = []
@@ -79,8 +106,11 @@ def check(output, render=False):
             for old_image in output.glob(name + '-*.png'):
                 if re.fullmatch(re.escape(name) + r'-\d+\.png', old_image.name):
                     old_image.unlink()
-            completed = subprocess.run([renderer, '-r', '100', '-png', str(tex.with_suffix('.pdf')),
-                                        str(output / name)], capture_output=True, timeout=120)
+            completed = subprocess.run(
+                [renderer, '-r', '100', '-png', str(tex.with_suffix('.pdf')), str(output / name)],
+                capture_output=True,
+                timeout=120,
+            )
             if completed.returncode:
                 raise ValueError(f'{name}: rendering failed')
             images = sorted(p.name for p in output.glob(name + '-*.png'))
@@ -88,8 +118,15 @@ def check(output, render=False):
                 raise ValueError(f'{name}: no rendered pages')
             if name == 'multipage' and len(images) < 2:
                 raise ValueError('Multipage fixture did not exercise a page break')
-        results.append({'case': name, 'compiled': True, 'log_checks_passed': True,
-                        'rendered_pages': images, 'visual_review': 'pending'})
+        results.append(
+            {
+                'case': name,
+                'compiled': True,
+                'log_checks_passed': True,
+                'rendered_pages': images,
+                'visual_review': 'pending',
+            }
+        )
     (output / 'qa.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
     return results
 

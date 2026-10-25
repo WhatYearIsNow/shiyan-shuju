@@ -15,11 +15,24 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 
-ROOT_FILES = frozenset({
-    "SKILL.md", "README.md", "LICENSE", "NOTICE.md", "CONTRIBUTING.md",
-    "CHANGELOG.md", ".gitignore", ".gitattributes", "pyproject.toml",
-    ".editorconfig", "ruff.toml", "requirements-dev.txt", "maintenance.json", "MAINTENANCE.md",
-})
+ROOT_FILES = frozenset(
+    {
+        "SKILL.md",
+        "README.md",
+        "LICENSE",
+        "NOTICE.md",
+        "CONTRIBUTING.md",
+        "CHANGELOG.md",
+        ".gitignore",
+        ".gitattributes",
+        "pyproject.toml",
+        ".editorconfig",
+        "ruff.toml",
+        "requirements-dev.txt",
+        "maintenance.json",
+        "MAINTENANCE.md",
+    }
+)
 PUBLIC_DIRECTORIES = {
     ".github": frozenset({".yml", ".yaml", ".md"}),
     "agents": frozenset({".yaml", ".yml", ".md"}),
@@ -31,24 +44,50 @@ PUBLIC_DIRECTORIES = {
     "scripts": frozenset({".py"}),
     "tests": frozenset({".py", ".json"}),
 }
-EXCLUDED_NAMES = frozenset({
-    ".git", ".local", "build", "dist", "__pycache__", ".pytest_cache",
-    ".mypy_cache", ".ruff_cache", ".venv", "venv", "env", "node_modules",
-    ".idea", ".vscode", ".DS_Store", "Thumbs.db",
-})
+EXCLUDED_NAMES = frozenset(
+    {
+        ".git",
+        ".local",
+        "build",
+        "dist",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".venv",
+        "venv",
+        "env",
+        "node_modules",
+        ".idea",
+        ".vscode",
+        ".DS_Store",
+        "Thumbs.db",
+    }
+)
 REQUIRED_FILES = ("SKILL.md", "README.md", "LICENSE", "NOTICE.md")
 
 # Keep patterns declarative: the scanner also checks its own source and tests.
 PRIVATE_PATTERNS = (
-    ("absolute local path", re.compile(
-        r"(?i)(?<![\w])(?:[a-z]:[\\/]|file:" r"//|/(?:Users|home|mnt|Volumes|tmp|opt|srv|var|etc|root)/)")),
+    (
+        "absolute local path",
+        re.compile(
+            r"(?i)(?<![\w])(?:[a-z]:[\\/]|file:"
+            r"//|/(?:Users|home|mnt|Volumes|tmp|opt|srv|var|etc|root)/)"
+        ),
+    ),
     ("network filesystem path", re.compile(r"\\\\[a-zA-Z0-9_.-]+\\[a-zA-Z0-9_$.-]+\\")),
     ("email address", re.compile(r"(?i)\b[a-z0-9][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}\b")),
-    ("possible student ID or personal numeric identifier", re.compile(
-        r"(?<![\w.])[1-9][0-9]{7,11}(?![\w.])")),
-    ("labelled student ID", re.compile(
-        r"(?i)(?:学号|学生编号|student[_ -]?(?:id|number)|bgID)"
-        r"[^\n0-9]{0,40}[0-9]{6,18}(?![0-9])")),
+    (
+        "possible student ID or personal numeric identifier",
+        re.compile(r"(?<![\w.])[1-9][0-9]{7,11}(?![\w.])"),
+    ),
+    (
+        "labelled student ID",
+        re.compile(
+            r"(?i)(?:学号|学生编号|student[_ -]?(?:id|number)|bgID)"
+            r"[^\n0-9]{0,40}[0-9]{6,18}(?![0-9])"
+        ),
+    ),
 )
 INLINE_LINK = re.compile(
     r"!?\[[^\]\n]*\]\(\s*(<[^>\n]+>|(?:\\.|[^()\s]|\([^()\n]*\))+)"
@@ -69,11 +108,15 @@ def _is_link(path: Path) -> bool:
 def validate_entry(path: Path, root: Path) -> None:
     """Refuse links, non-regular files, and paths outside the chosen tree."""
     if _is_link(path):
-        raise ValueError(f"{path.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable")
+        raise ValueError(
+            f"{path.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable"
+        )
     if not path.resolve().is_relative_to(root.resolve()):
         raise ValueError("release entry escapes the project root")
     if not path.is_file():
-        raise ValueError(f"{path.relative_to(root).as_posix()}: release entry is not a regular file")
+        raise ValueError(
+            f"{path.relative_to(root).as_posix()}: release entry is not a regular file"
+        )
 
 
 def collect_release_files(root: Path) -> list[Path]:
@@ -95,7 +138,9 @@ def collect_release_files(root: Path) -> list[Path]:
 
     def visit(directory: Path, extensions: frozenset[str]) -> None:
         if _is_link(directory):
-            raise ValueError(f"{directory.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable")
+            raise ValueError(
+                f"{directory.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable"
+            )
         with os.scandir(directory) as entries:
             names = sorted(entries, key=lambda entry: entry.name)
         for entry in names:
@@ -103,13 +148,17 @@ def collect_release_files(root: Path) -> list[Path]:
                 continue
             path = Path(entry.path)
             if _is_link(path):
-                raise ValueError(f"{path.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable")
+                raise ValueError(
+                    f"{path.relative_to(root).as_posix()}: symbolic links/reparse points are not releasable"
+                )
             if path.is_dir():
                 visit(path, extensions)
             else:
                 validate_entry(path, root)
                 if path.suffix.lower() not in extensions:
-                    raise ValueError(f"{path.relative_to(root).as_posix()}: file type is outside the public allowlist")
+                    raise ValueError(
+                        f"{path.relative_to(root).as_posix()}: file type is outside the public allowlist"
+                    )
                 result.append(path)
 
     for name, extensions in PUBLIC_DIRECTORIES.items():
@@ -144,7 +193,9 @@ def _frontmatter(text: str) -> list[str]:
         values[key] = value.strip().strip("\"'")
         active_key = key
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", values.get("name", "")):
-        issues.append("SKILL.md: frontmatter name must contain lowercase letters/digits and single hyphens")
+        issues.append(
+            "SKILL.md: frontmatter name must contain lowercase letters/digits and single hyphens"
+        )
     if not values.get("description", "").strip("|>+- "):
         issues.append("SKILL.md: frontmatter description is required")
     return issues
@@ -187,7 +238,9 @@ def _check_links(path: Path, root: Path, text: str, inventory: set[Path]) -> lis
                 issues.append(f"{relative}:{number}: broken relative link")
             elif candidate.is_dir():
                 if not any(item.is_relative_to(candidate) for item in inventory):
-                    issues.append(f"{relative}:{number}: link targets a directory outside the release")
+                    issues.append(
+                        f"{relative}:{number}: link targets a directory outside the release"
+                    )
             elif candidate not in inventory:
                 issues.append(f"{relative}:{number}: link targets a file outside the release")
     return issues
@@ -199,13 +252,19 @@ def check_release(root: Path, private_values: tuple[str, ...] = ()) -> list[str]
         files = collect_release_files(root)
     except (ValueError, OSError) as exc:
         return [str(exc)]
-    issues = [f"{name}: required release file is missing" for name in REQUIRED_FILES
-              if not (root / name).is_file()]
+    issues = [
+        f"{name}: required release file is missing"
+        for name in REQUIRED_FILES
+        if not (root / name).is_file()
+    ]
     denylist = root / ".local" / "release-denylist.txt"
     if denylist.is_file():
         try:
-            private_values += tuple(line.strip() for line in denylist.read_text(encoding="utf-8").splitlines()
-                                    if line.strip() and not line.lstrip().startswith("#"))
+            private_values += tuple(
+                line.strip()
+                for line in denylist.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.lstrip().startswith("#")
+            )
         except (OSError, UnicodeError):
             issues.append(".local/release-denylist.txt: cannot read UTF-8 private denylist")
     inventory = {path.resolve() for path in files}
@@ -232,11 +291,16 @@ def check_release(root: Path, private_values: tuple[str, ...] = ()) -> list[str]
             issues.extend(_frontmatter(content))
         for number, line in enumerate(content.splitlines(), 1):
             for label, pattern in PRIVATE_PATTERNS:
-                if label == "possible student ID or personal numeric identifier" and path.suffix.lower() == ".py":
+                if (
+                    label == "possible student ID or personal numeric identifier"
+                    and path.suffix.lower() == ".py"
+                ):
                     continue  # Long mathematical constants are valid source inputs.
                 if pattern.search(line):
                     # Never echo the matching personal value to a CI log.
-                    issues.append(f"{relative}:{number}: {label}; remove or replace with a placeholder")
+                    issues.append(
+                        f"{relative}:{number}: {label}; remove or replace with a placeholder"
+                    )
             if any(value and value in line for value in private_values):
                 issues.append(f"{relative}:{number}: contains a value from the private denylist")
         if path.suffix.lower() == ".md":

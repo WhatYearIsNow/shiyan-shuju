@@ -54,8 +54,11 @@ class VerificationTests(unittest.TestCase):
 
         def run(command, **kwargs):
             calls.append(command)
-            return SimpleNamespace(returncode=1 if len(calls) == 2 else 0,
-                                   stdout='', stderr='constructed failure' if len(calls) == 2 else 'Ran 23 tests\nOK')
+            return SimpleNamespace(
+                returncode=1 if len(calls) == 2 else 0,
+                stdout='',
+                stderr='constructed failure' if len(calls) == 2 else 'Ran 23 tests\nOK',
+            )
 
         output = self.temporary()
         report = MODULE.verify(output=output, package=True, runner=run)
@@ -73,8 +76,10 @@ class VerificationTests(unittest.TestCase):
 
         report = MODULE.verify(output=self.temporary(), template=True, package=True, runner=run)
         self.assertEqual(report['status'], 'passed')
-        self.assertEqual([s['name'] for s in report['stages']],
-                         ['compatibility', 'tests', 'release-check', 'package'])
+        self.assertEqual(
+            [s['name'] for s in report['stages']],
+            ['compatibility', 'tests', 'release-check', 'package'],
+        )
         self.assertIn('scripts/build_release.py', calls[-1][0])
         self.assertTrue(all(env['SHIYAN_TEMPLATE_INTEGRATION'] == '1' for _, env in calls))
         self.assertEqual(report['stages'][0]['skipped'], 1)
