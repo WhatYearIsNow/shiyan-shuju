@@ -5,7 +5,6 @@ course preset. Verify the instrument and source before using this preset; the
 reported uB must not be reinterpreted as a universal standard-uncertainty model.
 """
 
-
 from __future__ import annotations
 
 
@@ -23,14 +22,15 @@ BOX_GRADES = {
     Decimal("0.1"): Decimal("5"),
 }
 
+
 def _digit_at(reading: Decimal, place: Decimal) -> int:
     """取读数在指定位上的数字（0-9）。"""
     q = (reading / place).to_integral_value(rounding="ROUND_FLOOR")
     return int(q % 10)
 
+
 @calculation
-def resistance_box_error(reading, m: int, m_mode: str = "total",
-                         grades: dict | None = None):
+def resistance_box_error(reading, m: int, m_mode: str = "total", grades: dict | None = None):
     """
     电阻箱示值误差限 ΔR = Σ aᵢ%·Rᵢ + 0.005m
 
@@ -49,8 +49,10 @@ def resistance_box_error(reading, m: int, m_mode: str = "total",
     source = BOX_GRADES if grades is None else grades
     if not source:
         raise ValueError("等级表不能为空")
-    g = {_positive(place, "档位权值"): _nonnegative(pct, "准确度等级")
-         for place, pct in source.items()}
+    g = {
+        _positive(place, "档位权值"): _nonnegative(pct, "准确度等级")
+        for place, pct in source.items()
+    }
     places = sorted(g, reverse=True)
     if any(p.scaleb(-p.adjusted()) != 1 for p in places):
         raise ValueError("档位权值必须为十进制位权（如 100、10、1、0.1）")
@@ -69,24 +71,35 @@ def resistance_box_error(reading, m: int, m_mode: str = "total",
             contrib = pct / D(100) * (Decimal(digit) * place)
             total += contrib
             nonzero += 1
-            detail.append({
-                "place": fmt(place),
-                "digit": digit,
-                "grade_pct": fmt(pct),
-                "value": fmt(Decimal(digit) * place),
-                "contrib": contrib,
-            })
+            detail.append(
+                {
+                    "place": fmt(place),
+                    "digit": digit,
+                    "grade_pct": fmt(pct),
+                    "value": fmt(Decimal(digit) * place),
+                    "contrib": contrib,
+                }
+            )
     m_used = m if m_mode == "total" else nonzero
     const = Decimal("0.005") * m_used
     total += const
-    detail.append({"const_term": True, "m_mode": m_mode,
-                   "m_used": m_used, "contrib": const})
+    detail.append({"const_term": True, "m_mode": m_mode, "m_used": m_used, "contrib": const})
     return total, detail
 
+
 @calculation
-def bridge_row(R1, R2, R0, delta_R0_measured, delta_d=2,
-               m_R1=4, m_R2=4, m_R0=6, m_mode="total",
-               threshold=Decimal("0.2")):
+def bridge_row(
+    R1,
+    R2,
+    R0,
+    delta_R0_measured,
+    delta_d=2,
+    m_R1=4,
+    m_R2=4,
+    m_R0=6,
+    m_mode="total",
+    threshold=Decimal("0.2"),
+):
     """
     惠斯通电桥一行。
 
@@ -130,11 +143,17 @@ def bridge_row(R1, R2, R0, delta_R0_measured, delta_d=2,
     Er = uB / Rx * D(100)
 
     return {
-        "C": C, "Rx": Rx,
-        "dR1": dR1, "dR2": dR2, "dR0_box": dR0_box,
-        "rel": rel, "delta_x": delta_x,
-        "S": S, "delta_s": delta_s,
-        "uB": uB, "Er": Er,
+        "C": C,
+        "Rx": Rx,
+        "dR1": dR1,
+        "dR2": dR2,
+        "dR0_box": dR0_box,
+        "rel": rel,
+        "delta_x": delta_x,
+        "S": S,
+        "delta_s": delta_s,
+        "uB": uB,
+        "Er": Er,
         "method": "course_bridge_rss",
         "coverage_probability": None,
         "result_auto": align_result(Rx, uB, "auto"),

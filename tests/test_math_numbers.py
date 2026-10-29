@@ -1,4 +1,5 @@
 """Rounding and environment isolation with independently specified results."""
+
 import contextlib
 import io
 from pathlib import Path
@@ -15,18 +16,24 @@ import uncertainty as u
 class RoundingTests(unittest.TestCase):
     def test_half_even_both_signs_and_negative_places(self):
         for value, places, expected in (
-            ("2.675", 2, "2.68"), ("2.685", 2, "2.68"),
-            ("-2.675", 2, "-2.68"), ("-2.685", 2, "-2.68"),
-            ("1250", -2, "1.2E+3"), ("1350", -2, "1.4E+3"),
+            ("2.675", 2, "2.68"),
+            ("2.685", 2, "2.68"),
+            ("-2.675", 2, "-2.68"),
+            ("-2.685", 2, "-2.68"),
+            ("1250", -2, "1.2E+3"),
+            ("1350", -2, "1.4E+3"),
         ):
             with self.subTest(value=value):
                 self.assertEqual(str(u.round_half_even(value, places)), expected)
 
     def test_significant_rounding_carries_change_exponent(self):
         for value, count, expected in (
-            ("9.9", 1, "1E+1"), ("9.99", 2, "10"),
-            ("-9.95", 2, "-10"), ("999", 1, "1E+3"),
-            ("0.0999", 2, "0.10"), ("1.005", 3, "1.00"),
+            ("9.9", 1, "1E+1"),
+            ("9.99", 2, "10"),
+            ("-9.95", 2, "-10"),
+            ("999", 1, "1E+3"),
+            ("0.0999", 2, "0.10"),
+            ("1.005", 3, "1.00"),
             ("1.015", 3, "1.02"),
         ):
             with self.subTest(value=value, count=count):
@@ -49,8 +56,7 @@ class RoundingTests(unittest.TestCase):
         self.assertEqual(tuple(map(str, strict)), ("508", "1"))
 
     def test_zero_uncertainty_preserves_scientific_precision(self):
-        self.assertEqual(tuple(map(str, u.align_result("1.20E+3", "0"))),
-                         ("1.20E+3", "0E+1"))
+        self.assertEqual(tuple(map(str, u.align_result("1.20E+3", "0"))), ("1.20E+3", "0E+1"))
 
     def test_scientific_addition_uses_coarsest_recorded_place(self):
         for values, expected, places in (
@@ -105,8 +111,13 @@ assert repr(getcontext()) == before
 assert (sys.stdout, sys.stderr) == streams
 print('unchanged')
 """
-        result = subprocess.run([sys.executable, "-B", "-c", code], cwd=SCRIPTS,
-                                capture_output=True, text=True, encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, "-B", "-c", code],
+            cwd=SCRIPTS,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "unchanged")
         self.assertEqual(result.stderr, "")
@@ -128,8 +139,9 @@ print('unchanged')
                 self.assertEqual(u.mean([1, 2, 3]), 2)
                 self.assertEqual(u.selftest(verbose=False), 0)
                 with contextlib.redirect_stdout(io.StringIO()):
-                    self.assertEqual(u.main(["prop", "--value", "10", "--powers",
-                                             "x=2", "--rel", "x=.1"]), 0)
+                    self.assertEqual(
+                        u.main(["prop", "--value", "10", "--powers", "x=2", "--rel", "x=.1"]), 0
+                    )
                 self.assertEqual(repr(context), before)
 
     def test_context_restored_after_failure(self):

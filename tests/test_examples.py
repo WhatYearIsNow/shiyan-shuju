@@ -9,8 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ExampleTests(unittest.TestCase):
     def test_synthetic_direct_measurement(self):
-        result = subprocess.run([sys.executable, "-B", str(ROOT / "examples/direct_measurement.py")],
-                                capture_output=True, text=True, encoding="utf-8", check=True)
+        result = subprocess.run(
+            [sys.executable, "-B", str(ROOT / "examples/direct_measurement.py")],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
         data = json.loads(result.stdout)
         self.assertEqual(data["data_kind"], "synthetic")
         self.assertEqual(data["value"], "10.020")

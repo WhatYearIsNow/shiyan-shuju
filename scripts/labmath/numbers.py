@@ -4,30 +4,43 @@ Public calculations use their own context. Importing this package never changes
 the caller's Decimal context or output streams. Sixty digits are working
 precision, not a claim that every numerical derivative is exact.
 """
+
 from __future__ import annotations
 
 
 from decimal import (
-    Context, Decimal, DecimalException, DivisionByZero, InvalidOperation,
-    Overflow, ROUND_HALF_EVEN, localcontext,
+    Context,
+    Decimal,
+    DecimalException,
+    DivisionByZero,
+    InvalidOperation,
+    Overflow,
+    ROUND_HALF_EVEN,
+    localcontext,
 )
 from functools import wraps
 
 
 WORKING_PRECISION = 60
 _MATH_CONTEXT = Context(
-    prec=WORKING_PRECISION, rounding=ROUND_HALF_EVEN,
-    Emin=-999999, Emax=999999, capitals=1, clamp=0,
+    prec=WORKING_PRECISION,
+    rounding=ROUND_HALF_EVEN,
+    Emin=-999999,
+    Emax=999999,
+    capitals=1,
+    clamp=0,
     traps=[InvalidOperation, DivisionByZero, Overflow],
 )
 
 
 def calculation(function):
     """Run one calculation without depending on or mutating caller context."""
+
     @wraps(function)
     def isolated(*args, **kwargs):
         with localcontext(_MATH_CONTEXT):
             return function(*args, **kwargs)
+
     return isolated
 
 
@@ -47,11 +60,13 @@ def D(x) -> Decimal:
         raise ValueError(f"数值必须有限：{x!r}")
     return d
 
+
 def _nonnegative(x, name="不确定度"):
     d = D(x)
     if d < 0:
         raise ValueError(f"{name}不能为负")
     return d
+
 
 def _positive(x, name):
     d = D(x)
@@ -59,12 +74,14 @@ def _positive(x, name):
         raise ValueError(f"{name}必须大于 0")
     return d
 
+
 @calculation
 def round_half_even(x, ndigits: int = 0) -> Decimal:
     """4舍6入遇5凑偶，保留 ndigits 位小数。"""
     _integer(ndigits, "小数位数")
     q = Decimal(1).scaleb(-ndigits)
     return D(x).quantize(q, rounding=ROUND_HALF_EVEN)
+
 
 @calculation
 def round_sig(x, n: int = 1) -> Decimal:
@@ -74,13 +91,14 @@ def round_sig(x, n: int = 1) -> Decimal:
     d = D(x)
     if d == 0:
         return Decimal(0)
-    exp = d.adjusted()                      # 最高位的十进制指数
+    exp = d.adjusted()  # 最高位的十进制指数
     q = Decimal(1).scaleb(exp - n + 1)
     rounded = d.quantize(q, rounding=ROUND_HALF_EVEN)
     # A carry can change the order of magnitude: 9.99 to two figures is
     # Decimal('10'), not Decimal('10.0'). Keep the exponent as part of precision.
     final_q = Decimal(1).scaleb(rounded.adjusted() - n + 1)
     return rounded.quantize(final_q, rounding=ROUND_HALF_EVEN)
+
 
 @calculation
 def align_result(value, u, u_sig="auto"):
@@ -100,10 +118,11 @@ def align_result(value, u, u_sig="auto"):
     if u_sig == "auto" and u_r.adjusted() > u.adjusted():
         previous_q = Decimal(1).scaleb(u.adjusted() - n + 1)
         u_r = u_r.quantize(previous_q, rounding=ROUND_HALF_EVEN)
-    exp = u_r.as_tuple().exponent          # u_r 末位所在的十进制位
+    exp = u_r.as_tuple().exponent  # u_r 末位所在的十进制位
     q = Decimal(1).scaleb(exp)
     v_r = value.quantize(q, rounding=ROUND_HALF_EVEN)
     return v_r, u_r
+
 
 def leading_digit(x) -> int:
     """首个有效数字（1–9）。"""
@@ -111,6 +130,7 @@ def leading_digit(x) -> int:
     if a == 0:
         return 0
     return a.as_tuple().digits[0]
+
 
 def pick_u_sig(u, mode="auto") -> int:
     """
@@ -131,10 +151,12 @@ def pick_u_sig(u, mode="auto") -> int:
         raise ValueError("不确定度位数只能为 auto、1 或 2")
     return int(mode)
 
+
 def dec_places(x) -> int:
     """Decimal 的小数位数（用于加减法有效数字规则）。"""
     e = D(x).as_tuple().exponent
     return max(0, -e)
+
 
 def sig_figs(x) -> int:
     """
@@ -145,6 +167,7 @@ def sig_figs(x) -> int:
     if d == 0:
         return 1
     return len(d.as_tuple().digits)
+
 
 @calculation
 def fmt(x, nd: int | None = None) -> str:
@@ -158,6 +181,7 @@ def fmt(x, nd: int | None = None) -> str:
     if "." in s:
         s = s.rstrip("0").rstrip(".")
     return s or "0"
+
 
 def fmt_exact(x) -> str:
     """

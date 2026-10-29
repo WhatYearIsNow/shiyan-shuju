@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "project": "shiyan-shuju",
+  "skillName": "shiyan-shuju",
+  "baseline": [
+    [
+      "{python}",
+      "-B",
+      "scripts/verify.py",
+      "--output",
+      "{run}/validation"
+    ]
+  ],
+  "test": [
+    [
+      "{python}",
+      "-B",
+      "scripts/verify.py",
+      "--output",
+      "{run}/validation"
+    ]
+  ],
+  "check": [
+    [
+      "{python}",
+      "-m",
+      "ruff",
+      "format",
+      "--check",
+      "scripts",
+      "tests",
+      "examples"
+    ],
+    [
+      "{python}",
+      "-B",
+      "scripts/check_release.py"
+    ]
+  ],
+  "candidate": [
+    [
+      "{python}",
+      "-B",
+      "scripts/build_release.py",
+      "--output",
+      "{run}/artifacts/shiyan-shuju.zip"
+    ]
+  ],
+  "artifact": "*.zip",
+  "archivePrefix": "shiyan-shuju/",
+  "health": [
+    [
+      "{python}",
+      "-B",
+      "scripts/uncertainty.py",
+      "selftest"
+    ]
+  ],
+  "preserve": [
+    ".local"
+  ],
+  "format-check": [
+    [
+      "{python}",
+      "-m",
+      "ruff",
+      "format",
+      "--check",
+      "scripts",
+      "tests",
+      "examples"
+    ]
+  ],
+  "format": [
+    [
+      "{python}",
+      "-m",
+      "ruff",
+      "format",
+      "scripts",
+      "tests",
+      "examples"
+    ]
+  ]
+}
