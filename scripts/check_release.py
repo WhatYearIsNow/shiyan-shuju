@@ -31,6 +31,7 @@ ROOT_FILES = frozenset(
         "requirements-dev.txt",
         "maintenance.json",
         "MAINTENANCE.md",
+        "release-manifest.json",
     }
 )
 PUBLIC_DIRECTORIES = {
